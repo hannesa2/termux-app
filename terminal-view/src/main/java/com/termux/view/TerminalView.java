@@ -9,7 +9,6 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.SystemClock;
 import android.text.Editable;
 import android.text.InputType;
@@ -37,6 +36,8 @@ import android.view.inputmethod.InputConnection;
 import android.widget.PopupWindow;
 import android.widget.Scroller;
 
+import androidx.annotation.VisibleForTesting;
+
 import com.termux.terminal.EmulatorDebug;
 import com.termux.terminal.KeyHandler;
 import com.termux.terminal.TerminalBuffer;
@@ -50,22 +51,32 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
-/** View displaying and interacting with a {@link TerminalSession}. */
+/**
+ * View displaying and interacting with a {@link TerminalSession}.
+ */
 public final class TerminalView extends View {
 
-    /** Log view key and IME events. */
+    /**
+     * Log view key and IME events.
+     */
     private static final boolean LOG_KEY_EVENTS = false;
 
-    /** The currently displayed terminal session, whose emulator is {@link #mEmulator}. */
+    /**
+     * The currently displayed terminal session, whose emulator is {@link #mEmulator}.
+     */
     TerminalSession mTermSession;
-    /** Our terminal emulator whose session is {@link #mTermSession}. */
+    /**
+     * Our terminal emulator whose session is {@link #mTermSession}.
+     */
     TerminalEmulator mEmulator;
 
     TerminalRenderer mRenderer;
 
     TerminalViewClient mClient;
 
-    /** The top row of text to display. Ranges from -activeTranscriptRows to 0. */
+    /**
+     * The top row of text to display. Ranges from -activeTranscriptRows to 0.
+     */
     int mTopRow;
 
     boolean mIsSelectingText = false;
@@ -80,17 +91,25 @@ public final class TerminalView extends View {
     float mScaleFactor = 1.f;
     final GestureAndScaleRecognizer mGestureRecognizer;
 
-    /** Keep track of where mouse touch event started which we report as mouse scroll. */
+    /**
+     * Keep track of where mouse touch event started which we report as mouse scroll.
+     */
     private int mMouseScrollStartX = -1, mMouseScrollStartY = -1;
-    /** Keep track of the time when a touch event leading to sending mouse scroll events started. */
+    /**
+     * Keep track of the time when a touch event leading to sending mouse scroll events started.
+     */
     private long mMouseStartDownTime = -1;
 
     final Scroller mScroller;
 
-    /** What was left in from scrolling movement. */
+    /**
+     * What was left in from scrolling movement.
+     */
     float mScrollRemainder;
 
-    /** If non-zero, this is the last unicode code point received if that was a combining character. */
+    /**
+     * If non-zero, this is the last unicode code point received if that was a combining character.
+     */
     int mCombiningAccent;
 
     private boolean mAccessibilityEnabled;
@@ -460,7 +479,9 @@ public final class TerminalView extends View {
         return true;
     }
 
-    /** Send a single mouse event code to the terminal. */
+    /**
+     * Send a single mouse event code to the terminal.
+     */
     void sendMouseEventCode(MotionEvent e, int button, boolean pressed) {
         int x = (int) (e.getX() / mRenderer.mFontWidth) + 1;
         int y = (int) ((e.getY() - mRenderer.mFontLineSpacingAndAscent) / mRenderer.mFontLineSpacing) + 1;
@@ -477,7 +498,9 @@ public final class TerminalView extends View {
         mEmulator.sendMouseEvent(button, x, y, pressed);
     }
 
-    /** Perform a scroll, either from dragging the screen or by scrolling a mouse wheel. */
+    /**
+     * Perform a scroll, either from dragging the screen or by scrolling a mouse wheel.
+     */
     void doScroll(MotionEvent event, int rowsDown) {
         boolean up = rowsDown < 0;
         int amount = Math.abs(rowsDown);
@@ -495,7 +518,9 @@ public final class TerminalView extends View {
         }
     }
 
-    /** Overriding {@link View#onGenericMotionEvent(MotionEvent)}. */
+    /**
+     * Overriding {@link View#onGenericMotionEvent(MotionEvent)}.
+     */
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
         if (mEmulator != null && event.isFromSource(InputDevice.SOURCE_MOUSE) && event.getAction() == MotionEvent.ACTION_SCROLL) {
@@ -694,7 +719,9 @@ public final class TerminalView extends View {
         }
     }
 
-    /** Input the specified keyCode if applicable and return if the input was consumed. */
+    /**
+     * Input the specified keyCode if applicable and return if the input was consumed.
+     */
     public boolean handleKeyCode(int keyCode, int keyMod) {
         TerminalEmulator term = mTermSession.getEmulator();
         String code = KeyHandler.getCode(keyCode, keyMod, term.isCursorKeysApplicationMode(), term.isKeypadApplicationMode());
@@ -736,7 +763,9 @@ public final class TerminalView extends View {
         updateSize();
     }
 
-    /** Check if the terminal size in rows and columns should be updated. */
+    /**
+     * Check if the terminal size in rows and columns should be updated.
+     */
     public void updateSize() {
         int viewWidth = getWidth();
         int viewHeight = getHeight();
@@ -771,7 +800,9 @@ public final class TerminalView extends View {
         }
     }
 
-    /** Toggle text selection mode in the view. */
+    /**
+     * Toggle text selection mode in the view.
+     */
     @TargetApi(23)
     public void startSelectingText(MotionEvent ev) {
         int cx = (int) (ev.getX() / mRenderer.mFontWidth);
@@ -800,7 +831,7 @@ public final class TerminalView extends View {
         return mTermSession;
     }
 
-    private CharSequence getText() {
+    public CharSequence getText() {
         return mEmulator.getScreen().getSelectedText(0, mTopRow, mEmulator.mColumns, mTopRow + mEmulator.mRows);
     }
 
@@ -936,8 +967,8 @@ public final class TerminalView extends View {
                 case LEFT: {
                     if (mSelectHandleLeft == null) {
 
-                            mSelectHandleLeft = getContext().getDrawable(
-                                R.drawable.text_select_handle_left_material);
+                        mSelectHandleLeft = getContext().getDrawable(
+                            R.drawable.text_select_handle_left_material);
                     }
                     //
                     mDrawable = mSelectHandleLeft;
@@ -948,8 +979,8 @@ public final class TerminalView extends View {
 
                 case RIGHT: {
                     if (mSelectHandleRight == null) {
-                            mSelectHandleRight = getContext().getDrawable(
-                                R.drawable.text_select_handle_right_material);
+                        mSelectHandleRight = getContext().getDrawable(
+                            R.drawable.text_select_handle_right_material);
                     }
                     mDrawable = mSelectHandleRight;
                     handleWidth = mDrawable.getIntrinsicWidth();
