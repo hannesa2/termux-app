@@ -4,7 +4,6 @@ plugins {
 
 android {
     compileSdkVersion project.properties.compileSdkVersion.toInteger()
-    ndkVersion project.properties.ndkVersion
 
     dependencies {
         implementation "androidx.annotation:annotation:1.2.0"
